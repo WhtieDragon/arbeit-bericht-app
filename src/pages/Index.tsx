@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Plus, FileText, Calendar, Clock, Users } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import WorkReportForm from '@/components/WorkReportForm';
 import ReportsList from '@/components/ReportsList';
 import ColleaguesList from '@/components/ColleaguesList';
+
+interface Colleague {
+  id: string;
+  name: string;
+  department: string;
+  email: string;
+  createdAt: string;
+}
 
 interface WorkReport {
   id: string;
@@ -16,6 +23,8 @@ interface WorkReport {
   description: string;
   hours: number;
   createdAt: string;
+  colleagues: Colleague[];
+  worksite: string;
 }
 
 const Index = () => {
@@ -25,7 +34,19 @@ const Index = () => {
   useEffect(() => {
     const savedReports = localStorage.getItem('workReports');
     if (savedReports) {
-      setReports(JSON.parse(savedReports));
+      const parsedReports = JSON.parse(savedReports);
+      // Migration: Add missing fields to existing reports
+      const migratedReports = parsedReports.map((report: any) => ({
+        ...report,
+        colleagues: report.colleagues || [],
+        worksite: report.worksite || '',
+      }));
+      setReports(migratedReports);
+      
+      // Save migrated data back to localStorage
+      if (JSON.stringify(parsedReports) !== JSON.stringify(migratedReports)) {
+        localStorage.setItem('workReports', JSON.stringify(migratedReports));
+      }
     }
   }, []);
 
@@ -144,7 +165,14 @@ const Index = () => {
                 <div key={report.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                   <div>
                     <div className="font-medium text-gray-900">{report.project}</div>
-                    <div className="text-sm text-gray-500">{report.date} • {report.hours}h</div>
+                    <div className="text-sm text-gray-500">
+                      {report.date} • {report.hours}h
+                      {report.colleagues && report.colleagues.length > 0 && (
+                        <span className="ml-2 text-blue-600">
+                          • {report.colleagues.length} Kollege{report.colleagues.length !== 1 ? 'n' : ''}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-sm text-gray-400">
                     {report.startTime} - {report.endTime}
