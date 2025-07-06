@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Plus, FileText, Calendar, Clock, Users } from 'lucide-react';
+import { Plus, FileText, Calendar, Clock, Users, MapPin } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import WorkReportForm from '@/components/WorkReportForm';
 import ReportsList from '@/components/ReportsList';
 import ColleaguesList from '@/components/ColleaguesList';
+import WorksitesList from '@/components/WorksitesList';
 
 interface Colleague {
   id: string;
@@ -29,7 +30,7 @@ interface WorkReport {
 
 const Index = () => {
   const [reports, setReports] = useState<WorkReport[]>([]);
-  const [activeView, setActiveView] = useState<'dashboard' | 'create' | 'list' | 'colleagues'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'create' | 'list' | 'colleagues' | 'worksites'>('dashboard');
 
   useEffect(() => {
     const savedReports = localStorage.getItem('workReports');
@@ -152,6 +153,15 @@ const Index = () => {
           <Users className="w-5 h-5 mr-2" />
           Kollegenliste verwalten
         </Button>
+
+        <Button 
+          onClick={() => setActiveView('worksites')} 
+          variant="outline" 
+          className="w-full py-6 text-lg border-orange-200 text-orange-700 hover:bg-orange-50"
+        >
+          <MapPin className="w-5 h-5 mr-2" />
+          Baustellenliste verwalten
+        </Button>
       </div>
 
       {reports.length > 0 && (
@@ -206,6 +216,11 @@ const Index = () => {
           )}
           {activeView === 'colleagues' && (
             <ColleaguesList 
+              onBack={() => setActiveView('dashboard')}
+            />
+          )}
+          {activeView === 'worksites' && (
+            <WorksitesList 
               onBack={() => setActiveView('dashboard')}
             />
           )}

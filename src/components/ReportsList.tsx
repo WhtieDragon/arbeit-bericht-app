@@ -1,12 +1,20 @@
-
 import { useState } from 'react';
-import { ArrowLeft, Calendar, Clock, Trash2, FileText, Search, Filter } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Trash2, FileText, Search, Filter, Users, MapPin } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+
+interface Colleague {
+  id: string;
+  name: string;
+  department: string;
+  email: string;
+  createdAt: string;
+}
 
 interface WorkReport {
   id: string;
@@ -17,6 +25,8 @@ interface WorkReport {
   description: string;
   hours: number;
   createdAt: string;
+  colleagues: Colleague[];
+  worksite: string;
 }
 
 interface ReportsListProps {
@@ -68,11 +78,25 @@ const ReportsList = ({ reports, onBack, onDelete }: ReportsListProps) => {
   const searchReports = (reports: WorkReport[]) => {
     if (!searchTerm) return reports;
     
-    return reports.filter(report =>
-      report.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.date.includes(searchTerm)
-    );
+    return reports.filter(report => {
+      const searchLower = searchTerm.toLowerCase();
+      
+      // Suche in Projekt, Beschreibung und Datum
+      const matchesBasic = report.project.toLowerCase().includes(searchLower) ||
+        report.description.toLowerCase().includes(searchLower) ||
+        report.date.includes(searchTerm);
+      
+      // Suche in Baustelle
+      const matchesWorksite = report.worksite && report.worksite.toLowerCase().includes(searchLower);
+      
+      // Suche in Kollegen
+      const matchesColleagues = report.colleagues && report.colleagues.some(colleague =>
+        colleague.name.toLowerCase().includes(searchLower) ||
+        colleague.department.toLowerCase().includes(searchLower)
+      );
+      
+      return matchesBasic || matchesWorksite || matchesColleagues;
+    });
   };
 
   const sortReports = (reports: WorkReport[]) => {
@@ -131,7 +155,7 @@ const ReportsList = ({ reports, onBack, onDelete }: ReportsListProps) => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Berichte durchsuchen..."
+            placeholder="Berichte, Kollegen oder Baustellen durchsuchen..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -246,6 +270,33 @@ const ReportsList = ({ reports, onBack, onDelete }: ReportsListProps) => {
                       <p className="text-sm text-gray-600 line-clamp-2">
                         {report.description}
                       </p>
+                      
+                      {/* Baustelle anzeigen */}
+                      {report.worksite && (
+                        <div className="flex items-center mt-2">
+                          <MapPin className="w-3 h-3 text-gray-400 mr-1" />
+                          <span className="text-xs text-gray-500">{report.worksite}</span>
+                        </div>
+                      )}
+                      
+                      {/* Kollegen anzeigen */}
+                      {report.colleagues && report.colleagues.length > 0 && (
+                        <div className="flex items-center mt-2">
+                          <Users className="w-3 h-3 text-blue-400 mr-1" />
+                          <div className="flex flex-wrap gap-1">
+                            {report.colleagues.slice(0, 2).map((colleague) => (
+                              <Badge key={colleague.id} variant="secondary" className="text-xs bg-blue-50 text-blue-700">
+                                {colleague.name}
+                              </Badge>
+                            ))}
+                            {report.colleagues.length > 2 && (
+                              <Badge variant="secondary" className="text-xs bg-gray-50 text-gray-600">
+                                +{report.colleagues.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <Dialog>
                       <DialogTrigger asChild>
@@ -324,6 +375,28 @@ const ReportsList = ({ reports, onBack, onDelete }: ReportsListProps) => {
                   {selectedReport.hours.toFixed(2)} Stunden
                 </div>
               </div>
+              
+              {/* Baustelle */}
+              {selectedReport.worksite && (
+                <div>
+                  <div className="font-medium text-gray-900 mb-1">Baustelle</div>
+                  <div className="text-gray-600">{selectedReport.worksite}</div>
+                </div>
+              )}
+              
+              {/* Kollegen */}
+              {selectedReport.colleagues && selectedReport.colleagues.length > 0 && (
+                <div>
+                  <div className="font-medium text-gray-900 mb-2">Kollegen ({selectedReport.colleagues.length})</div>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedReport.colleagues.map((colleague) => (
+                      <Badge key={colleague.id} variant="secondary" className="bg-blue-50 text-blue-800">
+                        {colleague.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <div>
                 <div className="font-medium text-gray-900 mb-2">Tätigkeitsbeschreibung</div>

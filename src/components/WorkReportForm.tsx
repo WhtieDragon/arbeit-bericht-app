@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Users } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -7,12 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Colleague {
   id: string;
   name: string;
   department: string;
   email: string;
+  createdAt: string;
+}
+
+interface Worksite {
+  id: string;
+  name: string;
+  address: string;
+  description: string;
   createdAt: string;
 }
 
@@ -41,12 +49,18 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
   });
 
   const [colleagues, setColleagues] = useState<Colleague[]>([]);
+  const [worksites, setWorksites] = useState<Worksite[]>([]);
   const [selectedColleagues, setSelectedColleagues] = useState<Colleague[]>([]);
 
   useEffect(() => {
     const savedColleagues = localStorage.getItem('colleagues');
     if (savedColleagues) {
       setColleagues(JSON.parse(savedColleagues));
+    }
+
+    const savedWorksites = localStorage.getItem('worksites');
+    if (savedWorksites) {
+      setWorksites(JSON.parse(savedWorksites));
     }
   }, []);
 
@@ -86,6 +100,17 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
         return [...prev, colleague];
       }
     });
+  };
+
+  const handleWorksiteSelect = (worksiteId: string) => {
+    if (worksiteId === 'custom') {
+      setFormData(prev => ({ ...prev, worksite: '' }));
+    } else {
+      const selectedWorksite = worksites.find(w => w.id === worksiteId);
+      if (selectedWorksite) {
+        setFormData(prev => ({ ...prev, worksite: selectedWorksite.name }));
+      }
+    }
   };
 
   return (
@@ -172,13 +197,30 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
 
             <div>
               <Label htmlFor="worksite">Baustelle/Arbeitsort</Label>
-              <Input
-                id="worksite"
-                value={formData.worksite}
-                onChange={(e) => handleInputChange('worksite', e.target.value)}
-                placeholder="z.B. Hauptbaustelle Berlin, Büro Hamburg"
-                className="mt-1"
-              />
+              <div className="space-y-2">
+                {worksites.length > 0 && (
+                  <Select onValueChange={handleWorksiteSelect}>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Gespeicherte Baustelle wählen" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border shadow-lg z-50">
+                      <SelectItem value="custom">Eigene Eingabe</SelectItem>
+                      {worksites.map((worksite) => (
+                        <SelectItem key={worksite.id} value={worksite.id}>
+                          {worksite.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Input
+                  id="worksite"
+                  value={formData.worksite}
+                  onChange={(e) => handleInputChange('worksite', e.target.value)}
+                  placeholder="z.B. Hauptbaustelle Berlin, Büro Hamburg"
+                  className="mt-1"
+                />
+              </div>
             </div>
 
             <div>
