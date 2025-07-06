@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { Plus, FileText, Calendar, Clock } from 'lucide-react';
+import { Plus, FileText, Calendar, Clock, Users } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import WorkReportForm from '@/components/WorkReportForm';
 import ReportsList from '@/components/ReportsList';
+import ColleaguesList from '@/components/ColleaguesList';
 
 interface WorkReport {
   id: string;
@@ -19,7 +20,7 @@ interface WorkReport {
 
 const Index = () => {
   const [reports, setReports] = useState<WorkReport[]>([]);
-  const [activeView, setActiveView] = useState<'dashboard' | 'create' | 'list'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'create' | 'list' | 'colleagues'>('dashboard');
 
   useEffect(() => {
     const savedReports = localStorage.getItem('workReports');
@@ -121,6 +122,15 @@ const Index = () => {
           <FileText className="w-5 h-5 mr-2" />
           Alle Berichte anzeigen ({reports.length})
         </Button>
+
+        <Button 
+          onClick={() => setActiveView('colleagues')} 
+          variant="outline" 
+          className="w-full py-6 text-lg border-green-200 text-green-700 hover:bg-green-50"
+        >
+          <Users className="w-5 h-5 mr-2" />
+          Kollegenliste verwalten
+        </Button>
       </div>
 
       {reports.length > 0 && (
@@ -164,6 +174,11 @@ const Index = () => {
               reports={reports} 
               onBack={() => setActiveView('dashboard')}
               onDelete={deleteReport}
+            />
+          )}
+          {activeView === 'colleagues' && (
+            <ColleaguesList 
+              onBack={() => setActiveView('dashboard')}
             />
           )}
         </div>
