@@ -24,6 +24,14 @@ interface Worksite {
   createdAt: string;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  defaultHours: number;
+  createdAt: string;
+}
+
 interface WorkReportFormProps {
   onSave: (report: {
     date: string;
@@ -50,6 +58,7 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
 
   const [colleagues, setColleagues] = useState<Colleague[]>([]);
   const [worksites, setWorksites] = useState<Worksite[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedColleagues, setSelectedColleagues] = useState<Colleague[]>([]);
 
   useEffect(() => {
@@ -61,6 +70,11 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
     const savedWorksites = localStorage.getItem('worksites');
     if (savedWorksites) {
       setWorksites(JSON.parse(savedWorksites));
+    }
+
+    const savedProjects = localStorage.getItem('projects');
+    if (savedProjects) {
+      setProjects(JSON.parse(savedProjects));
     }
   }, []);
 
@@ -100,6 +114,31 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
         return [...prev, colleague];
       }
     });
+  };
+
+  const handleProjectSelect = (projectId: string) => {
+    if (projectId === 'custom') {
+      setFormData(prev => ({ ...prev, project: '', description: '' }));
+    } else {
+      const selectedProject = projects.find(p => p.id === projectId);
+      if (selectedProject) {
+        const defaultEndTime = calculateEndTimeFromHours(formData.startTime, selectedProject.defaultHours);
+        setFormData(prev => ({ 
+          ...prev, 
+          project: selectedProject.name,
+          description: selectedProject.description,
+          endTime: defaultEndTime
+        }));
+      }
+    }
+  };
+
+  const calculateEndTimeFromHours = (startTime: string, hours: number) => {
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const totalMinutes = startHour * 60 + startMinute + hours * 60;
+    const endHour = Math.floor(totalMinutes / 60);
+    const endMinute = totalMinutes % 60;
+    return `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
   };
 
   const handleWorksiteSelect = (worksiteId: string) => {
@@ -185,14 +224,31 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
           <CardContent className="space-y-4">
             <div>
               <Label htmlFor="project">Projekt/Kunde *</Label>
-              <Input
-                id="project"
-                value={formData.project}
-                onChange={(e) => handleInputChange('project', e.target.value)}
-                placeholder="z.B. Website Redesign für Firma XYZ"
-                required
-                className="mt-1"
-              />
+              <div className="space-y-2">
+                {projects.length > 0 && (
+                  <Select onValueChange={handleProjectSelect}>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Gespeichertes Projekt wählen" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border shadow-lg z-50">
+                      <SelectItem value="custom">Eigene Eingabe</SelectItem>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name} ({project.defaultHours}h)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Input
+                  id="project"
+                  value={formData.project}
+                  onChange={(e) => handleInputChange('project', e.target.value)}
+                  placeholder="z.B. Website Redesign für Firma XYZ"
+                  required
+                  className="mt-1"
+                />
+              </div>
             </div>
 
             <div>

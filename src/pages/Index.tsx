@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Plus, FileText, Calendar, Clock, Users, MapPin } from 'lucide-react';
+import { Plus, FileText, Calendar, Clock, Users, MapPin, FolderOpen } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import WorkReportForm from '@/components/WorkReportForm';
 import ReportsList from '@/components/ReportsList';
 import ColleaguesList from '@/components/ColleaguesList';
 import WorksitesList from '@/components/WorksitesList';
+import ProjectsList from '@/components/ProjectsList';
 
 interface Colleague {
   id: string;
@@ -30,7 +31,7 @@ interface WorkReport {
 
 const Index = () => {
   const [reports, setReports] = useState<WorkReport[]>([]);
-  const [activeView, setActiveView] = useState<'dashboard' | 'create' | 'list' | 'colleagues' | 'worksites'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'create' | 'list' | 'colleagues' | 'worksites' | 'projects'>('dashboard');
 
   useEffect(() => {
     const savedReports = localStorage.getItem('workReports');
@@ -146,6 +147,15 @@ const Index = () => {
         </Button>
 
         <Button 
+          onClick={() => setActiveView('projects')} 
+          variant="outline" 
+          className="w-full py-6 text-lg border-purple-200 text-purple-700 hover:bg-purple-50"
+        >
+          <FolderOpen className="w-5 h-5 mr-2" />
+          Wiederkehrende Projekte
+        </Button>
+
+        <Button 
           onClick={() => setActiveView('colleagues')} 
           variant="outline" 
           className="w-full py-6 text-lg border-green-200 text-green-700 hover:bg-green-50"
@@ -221,6 +231,11 @@ const Index = () => {
           )}
           {activeView === 'worksites' && (
             <WorksitesList 
+              onBack={() => setActiveView('dashboard')}
+            />
+          )}
+          {activeView === 'projects' && (
+            <ProjectsList 
               onBack={() => setActiveView('dashboard')}
             />
           )}
