@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -39,20 +40,28 @@ All colors MUST be HSL.
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Theme variables (will be updated by ThemeProvider) */
+    --theme-primary: #3B82F6;
+    --theme-secondary: #6366F1;
+    --theme-accent: #8B5CF6;
+    --theme-background: #FFFFFF;
+    --theme-surface: #F8FAFC;
+    --theme-text: #1E293B;
+    --theme-text-secondary: #64748B;
+    --theme-border: #E2E8F0;
+    --theme-success: #10B981;
+    --theme-warning: #F59E0B;
+    --theme-error: #EF4444;
+    --theme-border-radius: 0.5rem;
+    --theme-font-family: 'Inter, system-ui, sans-serif';
   }
 
   .dark {
@@ -101,5 +110,46 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--theme-font-family);
   }
+}
+
+/* Theme-aware classes */
+@layer components {
+  .theme-primary {
+    background-color: var(--theme-primary);
+  }
+  
+  .theme-text-primary {
+    color: var(--theme-primary);
+  }
+  
+  .theme-bg {
+    background-color: var(--theme-background);
+  }
+  
+  .theme-surface {
+    background-color: var(--theme-surface);
+  }
+  
+  .theme-text {
+    color: var(--theme-text);
+  }
+  
+  .theme-text-secondary {
+    color: var(--theme-text-secondary);
+  }
+  
+  .theme-border {
+    border-color: var(--theme-border);
+  }
+  
+  .theme-rounded {
+    border-radius: var(--theme-border-radius);
+  }
+}
+
+/* Animation for smooth theme transitions */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }

@@ -32,6 +32,7 @@ interface DashboardViewProps {
   onManageProjects: () => void;
   onManageColleagues: () => void;
   onManageWorksites: () => void;
+  onDesignSettings: () => void;
 }
 
 const DashboardView = ({
@@ -41,13 +42,14 @@ const DashboardView = ({
   onViewReports,
   onManageProjects,
   onManageColleagues,
-  onManageWorksites
+  onManageWorksites,
+  onDesignSettings
 }: DashboardViewProps) => {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-6 theme-bg">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Arbeitsberichte</h1>
-        <p className="text-gray-600">Verwalte deine täglichen Arbeitsberichte</p>
+        <h1 className="text-3xl font-bold theme-text mb-2">Arbeitsberichte</h1>
+        <p className="theme-text-secondary">Verwalte deine täglichen Arbeitsberichte</p>
       </div>
 
       <Statistics reports={reports} totalHoursThisWeek={totalHoursThisWeek} />
@@ -58,6 +60,7 @@ const DashboardView = ({
         onManageProjects={onManageProjects}
         onManageColleagues={onManageColleagues}
         onManageWorksites={onManageWorksites}
+        onDesignSettings={onDesignSettings}
         reportsCount={reports.length}
       />
 

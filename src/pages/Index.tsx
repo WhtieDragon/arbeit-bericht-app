@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import WorkReportForm from '@/components/WorkReportForm';
 import ReportsList from '@/components/ReportsList';
@@ -6,6 +5,7 @@ import ColleaguesList from '@/components/ColleaguesList';
 import WorksitesList from '@/components/WorksitesList';
 import ProjectsList from '@/components/ProjectsList';
 import DashboardView from '@/components/Dashboard/DashboardView';
+import DesignSettingsView from '@/components/DesignSettings/DesignSettingsView';
 
 interface Colleague {
   id: string;
@@ -30,7 +30,7 @@ interface WorkReport {
 
 const Index = () => {
   const [reports, setReports] = useState<WorkReport[]>([]);
-  const [activeView, setActiveView] = useState<'dashboard' | 'create' | 'list' | 'colleagues' | 'worksites' | 'projects'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'create' | 'list' | 'colleagues' | 'worksites' | 'projects' | 'design'>('dashboard');
 
   useEffect(() => {
     const savedReports = localStorage.getItem('workReports');
@@ -81,8 +81,8 @@ const Index = () => {
     .reduce((sum, report) => sum + report.hours, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-md mx-auto bg-white min-h-screen">
+    <div className="min-h-screen theme-bg">
+      <div className="max-w-md mx-auto theme-bg min-h-screen">
         <div className="p-6">
           {activeView === 'dashboard' && (
             <DashboardView
@@ -93,6 +93,7 @@ const Index = () => {
               onManageProjects={() => setActiveView('projects')}
               onManageColleagues={() => setActiveView('colleagues')}
               onManageWorksites={() => setActiveView('worksites')}
+              onDesignSettings={() => setActiveView('design')}
             />
           )}
           {activeView === 'create' && (
@@ -120,6 +121,11 @@ const Index = () => {
           )}
           {activeView === 'projects' && (
             <ProjectsList 
+              onBack={() => setActiveView('dashboard')}
+            />
+          )}
+          {activeView === 'design' && (
+            <DesignSettingsView 
               onBack={() => setActiveView('dashboard')}
             />
           )}

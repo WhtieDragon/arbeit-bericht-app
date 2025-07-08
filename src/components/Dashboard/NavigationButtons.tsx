@@ -1,5 +1,5 @@
 
-import { Plus, FileText, FolderOpen, Users, MapPin } from 'lucide-react';
+import { Plus, FileText, FolderOpen, Users, MapPin, Palette } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 interface NavigationButtonsProps {
@@ -8,6 +8,7 @@ interface NavigationButtonsProps {
   onManageProjects: () => void;
   onManageColleagues: () => void;
   onManageWorksites: () => void;
+  onDesignSettings: () => void;
   reportsCount: number;
 }
 
@@ -17,6 +18,7 @@ const NavigationButtons = ({
   onManageProjects, 
   onManageColleagues, 
   onManageWorksites, 
+  onDesignSettings,
   reportsCount 
 }: NavigationButtonsProps) => {
   return (
@@ -63,6 +65,15 @@ const NavigationButtons = ({
       >
         <MapPin className="w-5 h-5 mr-2" />
         Baustellenliste verwalten
+      </Button>
+
+      <Button 
+        onClick={onDesignSettings} 
+        variant="outline" 
+        className="w-full py-6 text-lg border-pink-200 text-pink-700 hover:bg-pink-50"
+      >
+        <Palette className="w-5 h-5 mr-2" />
+        Design-Einstellungen
       </Button>
     </div>
   );
