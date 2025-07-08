@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { ArrowLeft, Plus, User, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, User, Trash2, Edit } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,8 @@ const ColleaguesList = ({ onBack }: ColleaguesListProps) => {
   });
   
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingColleague, setEditingColleague] = useState<Colleague | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -53,6 +55,31 @@ const ColleaguesList = ({ onBack }: ColleaguesListProps) => {
     saveColleagues(updatedColleagues);
     setFormData({ name: '', department: '', email: '' });
     setShowAddForm(false);
+  };
+
+  const editColleague = (colleague: Colleague) => {
+    setEditingColleague(colleague);
+    setFormData({
+      name: colleague.name,
+      department: colleague.department,
+      email: colleague.email
+    });
+    setShowEditForm(true);
+  };
+
+  const updateColleague = () => {
+    if (!formData.name.trim() || !editingColleague) return;
+
+    const updatedColleagues = colleagues.map(colleague =>
+      colleague.id === editingColleague.id
+        ? { ...colleague, name: formData.name, department: formData.department, email: formData.email }
+        : colleague
+    );
+
+    saveColleagues(updatedColleagues);
+    setFormData({ name: '', department: '', email: '' });
+    setEditingColleague(null);
+    setShowEditForm(false);
   };
 
   const deleteColleague = (id: string) => {
@@ -137,34 +164,44 @@ const ColleaguesList = ({ onBack }: ColleaguesListProps) => {
                       {colleague.email}
                     </p>
                   </div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Kollegen löschen</DialogTitle>
-                        <DialogDescription>
-                          Möchtest du {colleague.name} wirklich aus der Kollegenliste entfernen?
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button variant="outline">Abbrechen</Button>
-                        <Button 
-                          variant="destructive" 
-                          onClick={() => deleteColleague(colleague.id)}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => editColleague(colleague)}
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
                         >
-                          Löschen
+                          <Trash2 className="w-4 h-4" />
                         </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Kollegen löschen</DialogTitle>
+                          <DialogDescription>
+                            Möchtest du {colleague.name} wirklich aus der Kollegenliste entfernen?
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <Button variant="outline">Abbrechen</Button>
+                          <Button 
+                            variant="destructive" 
+                            onClick={() => deleteColleague(colleague.id)}
+                          >
+                            Löschen
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -219,6 +256,58 @@ const ColleaguesList = ({ onBack }: ColleaguesListProps) => {
             </Button>
             <Button onClick={addColleague} disabled={!formData.name.trim()}>
               Hinzufügen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Colleague Dialog */}
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Kollegen bearbeiten</DialogTitle>
+            <DialogDescription>
+              Bearbeite die Daten von {editingColleague?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-name">Name *</Label>
+              <Input
+                id="edit-name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Max Mustermann"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-department">Abteilung</Label>
+              <Input
+                id="edit-department"
+                value={formData.department}
+                onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                placeholder="IT, Marketing, etc."
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-email">E-Mail</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="max@firma.de"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditForm(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={updateColleague} disabled={!formData.name.trim()}>
+              Speichern
             </Button>
           </DialogFooter>
         </DialogContent>

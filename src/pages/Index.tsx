@@ -64,6 +64,14 @@ const Index = () => {
     setActiveView('dashboard');
   };
 
+  const editReport = (updatedReport: WorkReport) => {
+    const updatedReports = reports.map(report =>
+      report.id === updatedReport.id ? updatedReport : report
+    );
+    setReports(updatedReports);
+    localStorage.setItem('workReports', JSON.stringify(updatedReports));
+  };
+
   const deleteReport = (id: string) => {
     const updatedReports = reports.filter(report => report.id !== id);
     setReports(updatedReports);
@@ -107,6 +115,7 @@ const Index = () => {
               reports={reports} 
               onBack={() => setActiveView('dashboard')}
               onDelete={deleteReport}
+              onEdit={editReport}
             />
           )}
           {activeView === 'colleagues' && (

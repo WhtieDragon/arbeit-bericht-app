@@ -1,12 +1,12 @@
+
 import { useState } from 'react';
-import { ArrowLeft, Calendar, Clock, Trash2, FileText, Search, Filter, Users, MapPin } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Clock, Users, MapPin, Edit, Trash2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import ReportEditDialog from './ReportEditDialog';
 
 interface Colleague {
   id: string;
@@ -33,108 +33,38 @@ interface ReportsListProps {
   reports: WorkReport[];
   onBack: () => void;
   onDelete: (id: string) => void;
+  onEdit?: (updatedReport: WorkReport) => void;
 }
 
-const ReportsList = ({ reports, onBack, onDelete }: ReportsListProps) => {
-  const [selectedReport, setSelectedReport] = useState<WorkReport | null>(null);
+const ReportsList = ({ reports, onBack, onDelete, onEdit }: ReportsListProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'date' | 'hours' | 'project'>('date');
-  const [filterBy, setFilterBy] = useState<'all' | 'week' | 'month' | 'today'>('all');
-  const [showFilters, setShowFilters] = useState(false);
+  const [editingReport, setEditingReport] = useState<WorkReport | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
-  const getWeekStart = (date: Date) => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff));
+  const handleEditReport = (report: WorkReport) => {
+    setEditingReport(report);
+    setShowEditDialog(true);
   };
 
-  const getMonthStart = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1);
-  };
-
-  const filterReports = (reports: WorkReport[]) => {
-    const today = new Date();
-    const todayString = today.toISOString().split('T')[0];
-    
-    return reports.filter(report => {
-      const reportDate = new Date(report.date);
-      
-      switch (filterBy) {
-        case 'today':
-          return report.date === todayString;
-        case 'week':
-          const weekStart = getWeekStart(today);
-          return reportDate >= weekStart && reportDate <= today;
-        case 'month':
-          const monthStart = getMonthStart(today);
-          return reportDate >= monthStart && reportDate <= today;
-        default:
-          return true;
-      }
-    });
-  };
-
-  const searchReports = (reports: WorkReport[]) => {
-    if (!searchTerm) return reports;
-    
-    return reports.filter(report => {
-      const searchLower = searchTerm.toLowerCase();
-      
-      // Suche in Projekt, Beschreibung und Datum
-      const matchesBasic = report.project.toLowerCase().includes(searchLower) ||
-        report.description.toLowerCase().includes(searchLower) ||
-        report.date.includes(searchTerm);
-      
-      // Suche in Baustelle
-      const matchesWorksite = report.worksite && report.worksite.toLowerCase().includes(searchLower);
-      
-      // Suche in Kollegen
-      const matchesColleagues = report.colleagues && report.colleagues.some(colleague =>
-        colleague.name.toLowerCase().includes(searchLower) ||
-        colleague.department.toLowerCase().includes(searchLower)
-      );
-      
-      return matchesBasic || matchesWorksite || matchesColleagues;
-    });
-  };
-
-  const sortReports = (reports: WorkReport[]) => {
-    return [...reports].sort((a, b) => {
-      switch (sortBy) {
-        case 'hours':
-          return b.hours - a.hours;
-        case 'project':
-          return a.project.localeCompare(b.project);
-        case 'date':
-        default:
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-      }
-    });
-  };
-
-  const processedReports = sortReports(searchReports(filterReports(reports)));
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('de-DE', {
-      weekday: 'short',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const totalHours = processedReports.reduce((sum, report) => sum + report.hours, 0);
-
-  const getFilterLabel = () => {
-    switch (filterBy) {
-      case 'today': return 'Heute';
-      case 'week': return 'Diese Woche';
-      case 'month': return 'Dieser Monat';
-      default: return 'Alle';
+  const handleSaveReport = (updatedReport: WorkReport) => {
+    if (onEdit) {
+      onEdit(updatedReport);
     }
+    setEditingReport(null);
+    setShowEditDialog(false);
   };
+
+  const filteredReports = reports.filter(report =>
+    report.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.worksite.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.colleagues.some(colleague => 
+      colleague.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ) ||
+    new Date(report.date).toLocaleDateString().includes(searchTerm)
+  );
+
+  const totalHours = filteredReports.reduce((sum, report) => sum + report.hours, 0);
 
   return (
     <div className="animate-fade-in">
@@ -147,164 +77,114 @@ const ReportsList = ({ reports, onBack, onDelete }: ReportsListProps) => {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-2xl font-bold text-gray-900">Alle Berichte</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Arbeitsberichte</h1>
       </div>
 
-      {/* Search and Filter Section */}
       <div className="space-y-4 mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Berichte, Kollegen oder Baustellen durchsuchen..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+        <Input
+          placeholder="Berichte durchsuchen..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full"
+        />
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex-1"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filter & Sortierung
-          </Button>
-        </div>
-
-        {showFilters && (
+        <div className="grid grid-cols-2 gap-4">
           <Card>
-            <CardContent className="pt-4 space-y-4">
-              <div>
-                <Label htmlFor="filter">Zeitraum</Label>
-                <Select value={filterBy} onValueChange={(value: any) => setFilterBy(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Berichte</SelectItem>
-                    <SelectItem value="today">Heute</SelectItem>
-                    <SelectItem value="week">Diese Woche</SelectItem>
-                    <SelectItem value="month">Dieser Monat</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="sort">Sortieren nach</Label>
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="date">Datum (neueste zuerst)</SelectItem>
-                    <SelectItem value="hours">Stunden (meiste zuerst)</SelectItem>
-                    <SelectItem value="project">Projekt (A-Z)</SelectItem>
-                  </SelectContent>
-                </Select>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">{filteredReports.length}</div>
+                <div className="text-sm text-gray-500">
+                  {searchTerm ? 'Gefundene Berichte' : 'Gesamt Berichte'}
+                </div>
               </div>
             </CardContent>
           </Card>
-        )}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{totalHours.toFixed(1)}h</div>
+                <div className="text-sm text-gray-500">
+                  {searchTerm ? 'Gefilterte Stunden' : 'Gesamt Stunden'}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="text-2xl font-bold text-gray-900">{processedReports.length}</div>
-              <div className="text-sm text-gray-500">{getFilterLabel()} • Berichte</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">{totalHours.toFixed(1)}h</div>
-              <div className="text-sm text-gray-500">{getFilterLabel()} • Stunden</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {processedReports.length === 0 ? (
+      {filteredReports.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center">
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm || filterBy !== 'all' 
-                ? 'Keine Berichte gefunden' 
-                : 'Noch keine Berichte'}
+              {reports.length === 0 ? 'Noch keine Berichte' : 'Keine Berichte gefunden'}
             </h3>
             <p className="text-gray-500">
-              {searchTerm || filterBy !== 'all'
-                ? 'Versuche andere Suchbegriffe oder Filter.'
-                : 'Erstelle deinen ersten Arbeitsbericht um loszulegen.'}
+              {reports.length === 0 
+                ? 'Erstelle deinen ersten Arbeitsbericht.' 
+                : 'Versuche einen anderen Suchbegriff.'}
             </p>
-            {(searchTerm || filterBy !== 'all') && (
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterBy('all');
-                }}
-              >
-                Filter zurücksetzen
-              </Button>
-            )}
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {processedReports.map((report) => (
-            <Card key={report.id} className="hover:shadow-md transition-shadow cursor-pointer">
+        <div className="space-y-4">
+          {filteredReports
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .map((report) => (
+            <Card key={report.id} className="hover:shadow-md transition-shadow">
               <CardContent className="pt-4">
-                <div 
-                  className="space-y-3"
-                  onClick={() => setSelectedReport(report)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1">
-                        {report.project}
-                      </h3>
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {report.description}
-                      </p>
-                      
-                      {/* Baustelle anzeigen */}
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 mb-2">{report.project}</h3>
+                    
+                    <div className="flex flex-wrap gap-3 text-sm text-gray-600 mb-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {new Date(report.date).toLocaleDateString()}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {report.startTime} - {report.endTime} ({report.hours.toFixed(1)}h)
+                      </div>
                       {report.worksite && (
-                        <div className="flex items-center mt-2">
-                          <MapPin className="w-3 h-3 text-gray-400 mr-1" />
-                          <span className="text-xs text-gray-500">{report.worksite}</span>
-                        </div>
-                      )}
-                      
-                      {/* Kollegen anzeigen */}
-                      {report.colleagues && report.colleagues.length > 0 && (
-                        <div className="flex items-center mt-2">
-                          <Users className="w-3 h-3 text-blue-400 mr-1" />
-                          <div className="flex flex-wrap gap-1">
-                            {report.colleagues.slice(0, 2).map((colleague) => (
-                              <Badge key={colleague.id} variant="secondary" className="text-xs bg-blue-50 text-blue-700">
-                                {colleague.name}
-                              </Badge>
-                            ))}
-                            {report.colleagues.length > 2 && (
-                              <Badge variant="secondary" className="text-xs bg-gray-50 text-gray-600">
-                                +{report.colleagues.length - 2}
-                              </Badge>
-                            )}
-                          </div>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          {report.worksite}
                         </div>
                       )}
                     </div>
+
+                    <p className="text-gray-700 mb-3 line-clamp-2">{report.description}</p>
+
+                    {report.colleagues && report.colleagues.length > 0 && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="w-4 h-4 text-gray-400" />
+                        <div className="flex flex-wrap gap-1">
+                          {report.colleagues.map((colleague) => (
+                            <Badge key={colleague.id} variant="secondary" className="text-xs">
+                              {colleague.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2 ml-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditReport(report)}
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 ml-2"
-                          onClick={(e) => e.stopPropagation()}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -313,7 +193,7 @@ const ReportsList = ({ reports, onBack, onDelete }: ReportsListProps) => {
                         <DialogHeader>
                           <DialogTitle>Bericht löschen</DialogTitle>
                           <DialogDescription>
-                            Möchtest du diesen Arbeitsbericht wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                            Möchtest du den Arbeitsbericht für "{report.project}" vom {new Date(report.date).toLocaleDateString()} wirklich löschen?
                           </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
@@ -328,17 +208,6 @@ const ReportsList = ({ reports, onBack, onDelete }: ReportsListProps) => {
                       </DialogContent>
                     </Dialog>
                   </div>
-                  
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      {formatDate(report.date)}
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-1" />
-                      {report.startTime} - {report.endTime} ({report.hours.toFixed(1)}h)
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -346,67 +215,13 @@ const ReportsList = ({ reports, onBack, onDelete }: ReportsListProps) => {
         </div>
       )}
 
-      {/* Report Detail Modal */}
-      {selectedReport && (
-        <Dialog open={!!selectedReport} onOpenChange={() => setSelectedReport(null)}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{selectedReport.project}</DialogTitle>
-              <DialogDescription>
-                Arbeitsbericht vom {formatDate(selectedReport.date)}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="font-medium text-gray-900">Startzeit</div>
-                  <div className="text-gray-600">{selectedReport.startTime}</div>
-                </div>
-                <div>
-                  <div className="font-medium text-gray-900">Endzeit</div>
-                  <div className="text-gray-600">{selectedReport.endTime}</div>
-                </div>
-              </div>
-              
-              <div>
-                <div className="font-medium text-gray-900 mb-1">Gesamtarbeitszeit</div>
-                <div className="text-lg font-semibold text-blue-600">
-                  {selectedReport.hours.toFixed(2)} Stunden
-                </div>
-              </div>
-              
-              {/* Baustelle */}
-              {selectedReport.worksite && (
-                <div>
-                  <div className="font-medium text-gray-900 mb-1">Baustelle</div>
-                  <div className="text-gray-600">{selectedReport.worksite}</div>
-                </div>
-              )}
-              
-              {/* Kollegen */}
-              {selectedReport.colleagues && selectedReport.colleagues.length > 0 && (
-                <div>
-                  <div className="font-medium text-gray-900 mb-2">Kollegen ({selectedReport.colleagues.length})</div>
-                  <div className="flex flex-wrap gap-1">
-                    {selectedReport.colleagues.map((colleague) => (
-                      <Badge key={colleague.id} variant="secondary" className="bg-blue-50 text-blue-800">
-                        {colleague.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              <div>
-                <div className="font-medium text-gray-900 mb-2">Tätigkeitsbeschreibung</div>
-                <div className="text-gray-600 text-sm leading-relaxed bg-gray-50 p-3 rounded-lg">
-                  {selectedReport.description}
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+      {editingReport && (
+        <ReportEditDialog
+          report={editingReport}
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          onSave={handleSaveReport}
+        />
       )}
     </div>
   );

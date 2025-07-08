@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { ArrowLeft, Plus, MapPin, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, MapPin, Trash2, Edit } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,8 @@ const WorksitesList = ({ onBack }: WorksitesListProps) => {
   });
   
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingWorksite, setEditingWorksite] = useState<Worksite | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -53,6 +55,31 @@ const WorksitesList = ({ onBack }: WorksitesListProps) => {
     saveWorksites(updatedWorksites);
     setFormData({ name: '', address: '', description: '' });
     setShowAddForm(false);
+  };
+
+  const editWorksite = (worksite: Worksite) => {
+    setEditingWorksite(worksite);
+    setFormData({
+      name: worksite.name,
+      address: worksite.address,
+      description: worksite.description
+    });
+    setShowEditForm(true);
+  };
+
+  const updateWorksite = () => {
+    if (!formData.name.trim() || !editingWorksite) return;
+
+    const updatedWorksites = worksites.map(worksite =>
+      worksite.id === editingWorksite.id
+        ? { ...worksite, name: formData.name, address: formData.address, description: formData.description }
+        : worksite
+    );
+
+    saveWorksites(updatedWorksites);
+    setFormData({ name: '', address: '', description: '' });
+    setEditingWorksite(null);
+    setShowEditForm(false);
   };
 
   const deleteWorksite = (id: string) => {
@@ -141,34 +168,44 @@ const WorksitesList = ({ onBack }: WorksitesListProps) => {
                       </p>
                     )}
                   </div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Baustelle löschen</DialogTitle>
-                        <DialogDescription>
-                          Möchtest du {worksite.name} wirklich aus der Baustellenliste entfernen?
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button variant="outline">Abbrechen</Button>
-                        <Button 
-                          variant="destructive" 
-                          onClick={() => deleteWorksite(worksite.id)}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => editWorksite(worksite)}
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
                         >
-                          Löschen
+                          <Trash2 className="w-4 h-4" />
                         </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Baustelle löschen</DialogTitle>
+                          <DialogDescription>
+                            Möchtest du {worksite.name} wirklich aus der Baustellenliste entfernen?
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <Button variant="outline">Abbrechen</Button>
+                          <Button 
+                            variant="destructive" 
+                            onClick={() => deleteWorksite(worksite.id)}
+                          >
+                            Löschen
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -222,6 +259,57 @@ const WorksitesList = ({ onBack }: WorksitesListProps) => {
             </Button>
             <Button onClick={addWorksite} disabled={!formData.name.trim()}>
               Hinzufügen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Worksite Dialog */}
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Baustelle bearbeiten</DialogTitle>
+            <DialogDescription>
+              Bearbeite die Daten von {editingWorksite?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-name">Name *</Label>
+              <Input
+                id="edit-name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="z.B. Hauptbaustelle Berlin"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-address">Adresse</Label>
+              <Input
+                id="edit-address"
+                value={formData.address}
+                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                placeholder="Musterstraße 123, 12345 Berlin"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-description">Beschreibung</Label>
+              <Input
+                id="edit-description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Zusätzliche Informationen zur Baustelle"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditForm(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={updateWorksite} disabled={!formData.name.trim()}>
+              Speichern
             </Button>
           </DialogFooter>
         </DialogContent>
