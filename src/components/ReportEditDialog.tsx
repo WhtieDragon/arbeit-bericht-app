@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { calculateWorkingHours } from './WorkReport/TimeCalculator';
+import WorkingTimeDisplay from './WorkReport/WorkingTimeDisplay';
+import BreakTimeInput from './WorkReport/BreakTimeInput';
 
 interface Colleague {
   id: string;
@@ -45,6 +47,7 @@ interface WorkReport {
   createdAt: string;
   colleagues: Colleague[];
   worksite: string;
+  breakMinutes?: number;
 }
 
 interface ReportEditDialogProps {
@@ -62,6 +65,7 @@ const ReportEditDialog = ({ report, open, onOpenChange, onSave }: ReportEditDial
     project: report.project,
     description: report.description,
     worksite: report.worksite,
+    breakMinutes: report.breakMinutes || 0,
   });
 
   const [colleagues, setColleagues] = useState<Colleague[]>([]);
@@ -94,18 +98,12 @@ const ReportEditDialog = ({ report, open, onOpenChange, onSave }: ReportEditDial
       project: report.project,
       description: report.description,
       worksite: report.worksite,
+      breakMinutes: report.breakMinutes || 0,
     });
     setSelectedColleagues(report.colleagues || []);
   }, [report]);
 
-  const calculateHours = (start: string, end: string) => {
-    const startTime = new Date(`2000-01-01T${start}`);
-    const endTime = new Date(`2000-01-01T${end}`);
-    const diffMs = endTime.getTime() - startTime.getTime();
-    return Math.max(0, diffMs / (1000 * 60 * 60));
-  };
-
-  const hours = calculateHours(formData.startTime, formData.endTime);
+  const hours = calculateWorkingHours(formData.startTime, formData.endTime, formData.breakMinutes);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +123,7 @@ const ReportEditDialog = ({ report, open, onOpenChange, onSave }: ReportEditDial
     onOpenChange(false);
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -229,11 +227,17 @@ const ReportEditDialog = ({ report, open, onOpenChange, onSave }: ReportEditDial
                 </div>
               </div>
 
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <div className="text-sm text-blue-600 font-medium">
-                  Gesamtarbeitszeit: {hours.toFixed(2)} Stunden
-                </div>
-              </div>
+              <BreakTimeInput
+                value={formData.breakMinutes}
+                onChange={(minutes) => handleInputChange('breakMinutes', minutes)}
+              />
+
+              <WorkingTimeDisplay
+                startTime={formData.startTime}
+                endTime={formData.endTime}
+                breakMinutes={formData.breakMinutes}
+                totalHours={hours}
+              />
             </CardContent>
           </Card>
 

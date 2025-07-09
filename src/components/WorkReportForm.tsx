@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { calculateWorkingHours } from './WorkReport/TimeCalculator';
+import WorkingTimeDisplay from './WorkReport/WorkingTimeDisplay';
+import BreakTimeInput from './WorkReport/BreakTimeInput';
 
 interface Colleague {
   id: string;
@@ -42,6 +45,7 @@ interface WorkReportFormProps {
     hours: number;
     colleagues: Colleague[];
     worksite: string;
+    breakMinutes: number;
   }) => void;
   onCancel: () => void;
 }
@@ -54,6 +58,7 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
     project: '',
     description: '',
     worksite: '',
+    breakMinutes: 30,
   });
 
   const [colleagues, setColleagues] = useState<Colleague[]>([]);
@@ -78,14 +83,7 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
     }
   }, []);
 
-  const calculateHours = (start: string, end: string) => {
-    const startTime = new Date(`2000-01-01T${start}`);
-    const endTime = new Date(`2000-01-01T${end}`);
-    const diffMs = endTime.getTime() - startTime.getTime();
-    return Math.max(0, diffMs / (1000 * 60 * 60));
-  };
-
-  const hours = calculateHours(formData.startTime, formData.endTime);
+  const hours = calculateWorkingHours(formData.startTime, formData.endTime, formData.breakMinutes);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +99,7 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
     });
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -209,11 +207,17 @@ const WorkReportForm = ({ onSave, onCancel }: WorkReportFormProps) => {
               </div>
             </div>
 
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <div className="text-sm text-blue-600 font-medium">
-                Gesamtarbeitszeit: {hours.toFixed(2)} Stunden
-              </div>
-            </div>
+            <BreakTimeInput
+              value={formData.breakMinutes}
+              onChange={(minutes) => handleInputChange('breakMinutes', minutes)}
+            />
+
+            <WorkingTimeDisplay
+              startTime={formData.startTime}
+              endTime={formData.endTime}
+              breakMinutes={formData.breakMinutes}
+              totalHours={hours}
+            />
           </CardContent>
         </Card>
 

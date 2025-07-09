@@ -26,6 +26,7 @@ interface WorkReport {
   createdAt: string;
   colleagues: Colleague[];
   worksite: string;
+  breakMinutes?: number;
 }
 
 const Index = () => {
@@ -41,6 +42,7 @@ const Index = () => {
         ...report,
         colleagues: report.colleagues || [],
         worksite: report.worksite || '',
+        breakMinutes: report.breakMinutes || 0,
       }));
       setReports(migratedReports);
       
