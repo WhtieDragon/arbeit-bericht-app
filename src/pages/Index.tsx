@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import WorkReportForm from '@/components/WorkReportForm';
 import ReportsList from '@/components/ReportsList';
@@ -34,26 +35,34 @@ const Index = () => {
   const [activeView, setActiveView] = useState<'dashboard' | 'create' | 'list' | 'colleagues' | 'worksites' | 'projects' | 'design'>('dashboard');
 
   useEffect(() => {
+    console.log('Index component mounted, activeView:', activeView);
+    
     const savedReports = localStorage.getItem('workReports');
     if (savedReports) {
-      const parsedReports = JSON.parse(savedReports);
-      // Migration: Add missing fields to existing reports
-      const migratedReports = parsedReports.map((report: any) => ({
-        ...report,
-        colleagues: report.colleagues || [],
-        worksite: report.worksite || '',
-        breakMinutes: report.breakMinutes || 0,
-      }));
-      setReports(migratedReports);
-      
-      // Save migrated data back to localStorage
-      if (JSON.stringify(parsedReports) !== JSON.stringify(migratedReports)) {
-        localStorage.setItem('workReports', JSON.stringify(migratedReports));
+      try {
+        const parsedReports = JSON.parse(savedReports);
+        // Migration: Add missing fields to existing reports
+        const migratedReports = parsedReports.map((report: any) => ({
+          ...report,
+          colleagues: report.colleagues || [],
+          worksite: report.worksite || '',
+          breakMinutes: report.breakMinutes || 0,
+        }));
+        setReports(migratedReports);
+        
+        // Save migrated data back to localStorage
+        if (JSON.stringify(parsedReports) !== JSON.stringify(migratedReports)) {
+          localStorage.setItem('workReports', JSON.stringify(migratedReports));
+        }
+      } catch (error) {
+        console.error('Error parsing saved reports:', error);
+        setReports([]);
       }
     }
   }, []);
 
   const saveReport = (report: Omit<WorkReport, 'id' | 'createdAt'>) => {
+    console.log('Saving report:', report);
     const newReport: WorkReport = {
       ...report,
       id: Date.now().toString(),
@@ -67,6 +76,7 @@ const Index = () => {
   };
 
   const editReport = (updatedReport: WorkReport) => {
+    console.log('Editing report:', updatedReport);
     const updatedReports = reports.map(report =>
       report.id === updatedReport.id ? updatedReport : report
     );
@@ -75,6 +85,7 @@ const Index = () => {
   };
 
   const deleteReport = (id: string) => {
+    console.log('Deleting report:', id);
     const updatedReports = reports.filter(report => report.id !== id);
     setReports(updatedReports);
     localStorage.setItem('workReports', JSON.stringify(updatedReports));
@@ -90,6 +101,13 @@ const Index = () => {
     })
     .reduce((sum, report) => sum + report.hours, 0);
 
+  const handleViewChange = (view: typeof activeView) => {
+    console.log('Changing view to:', view);
+    setActiveView(view);
+  };
+
+  console.log('Rendering Index with activeView:', activeView);
+
   return (
     <div className="min-h-screen theme-bg">
       <div className="max-w-md mx-auto theme-bg min-h-screen">
@@ -98,46 +116,46 @@ const Index = () => {
             <DashboardView
               reports={reports}
               totalHoursThisWeek={totalHoursThisWeek}
-              onCreateReport={() => setActiveView('create')}
-              onViewReports={() => setActiveView('list')}
-              onManageProjects={() => setActiveView('projects')}
-              onManageColleagues={() => setActiveView('colleagues')}
-              onManageWorksites={() => setActiveView('worksites')}
-              onDesignSettings={() => setActiveView('design')}
+              onCreateReport={() => handleViewChange('create')}
+              onViewReports={() => handleViewChange('list')}
+              onManageProjects={() => handleViewChange('projects')}
+              onManageColleagues={() => handleViewChange('colleagues')}
+              onManageWorksites={() => handleViewChange('worksites')}
+              onDesignSettings={() => handleViewChange('design')}
             />
           )}
           {activeView === 'create' && (
             <WorkReportForm 
               onSave={saveReport} 
-              onCancel={() => setActiveView('dashboard')} 
+              onCancel={() => handleViewChange('dashboard')} 
             />
           )}
           {activeView === 'list' && (
             <ReportsList 
               reports={reports} 
-              onBack={() => setActiveView('dashboard')}
+              onBack={() => handleViewChange('dashboard')}
               onDelete={deleteReport}
               onEdit={editReport}
             />
           )}
           {activeView === 'colleagues' && (
             <ColleaguesList 
-              onBack={() => setActiveView('dashboard')}
+              onBack={() => handleViewChange('dashboard')}
             />
           )}
           {activeView === 'worksites' && (
             <WorksitesList 
-              onBack={() => setActiveView('dashboard')}
+              onBack={() => handleViewChange('dashboard')}
             />
           )}
           {activeView === 'projects' && (
             <ProjectsList 
-              onBack={() => setActiveView('dashboard')}
+              onBack={() => handleViewChange('dashboard')}
             />
           )}
           {activeView === 'design' && (
             <DesignSettingsView 
-              onBack={() => setActiveView('dashboard')}
+              onBack={() => handleViewChange('dashboard')}
             />
           )}
         </div>
